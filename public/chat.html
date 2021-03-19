@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- bootstrap cdn -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+    <title>Chat Application</title>
+    <style>
+        /* chat box ui */
+        #chat, #chatName { 
+            list-style-type:none ;
+            margin: 0;
+            padding: 0;
+        }
+
+        #chat li,  #chatName li {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+
+
+    <!-- navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Group Chat App</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Text Submit -->
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-1">  
+                <ul id="chatName" ></ul>
+            </div>
+            <div class="col-sm-11">
+                <ul id="chat"></ul>
+            </div>
+                <form id="messageForm"> 
+                    <div class="col-sm-12">
+                        <div class="input-group input-group-default">
+                            <input type="text" id="userMessage" class="form-control" aria-label="Sizing example input"
+                                aria-describedby="inputGroup-sizing-lg">
+                            <input type="submit" class="btn btn-primary btn-lg" value="Send" >
+                        </div>
+                    </div>
+                </form>
+            </ul>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+            // num specifies the length of a name
+            const randomName = num => {
+                let res = '';
+                for (let i = 0; i < num; i++) {
+                    const random = Math.floor(Math.random() * 27);
+                    res += String.fromCharCode(97 + random);
+                };
+                return res;
+            };
+
+        // list of words to replace using regex
+        const regexBadWords = /shit|fuck|Bastard|Asshole|Bitch|Damn|cunt/ig;
+
+        //  socket connection
+        const socket = io('http://localhost:9000')
+        let nickname = randomName(6)
+        
+        // first tiem connection
+        socket.on('messageFromServer', (dataFromServer) => {
+            socket.emit('messsageToServer', { message:  "has entered a room", name: nickname })
+         })
+
+        // submit listen event if the send is submitted
+        document.querySelector('#messageForm').addEventListener('submit', (event)=> {
+
+            event.preventDefault()
+            const nMessage = document.querySelector('#userMessage').value
+
+            // check if empty string is submitted
+            if (nMessage == ''){
+
+            }
+            else {
+                // regex to remve bad words
+                const fixedMessage = nMessage.replace(regexBadWords,'*');
+                socket.emit('messsageToServer', { message: fixedMessage,name:nickname })
+                document.querySelector('#userMessage').value = ''
+            }
+        })
+
+        // listen for messagetoClients
+        // create actual message to the chat box
+        socket.on('messageToClients', (msg)=> {
+            console.log(msg)
+            var name = document.createElement('li')
+            name.innerHTML = msg.name
+            document.querySelector('#chatName').appendChild(name)
+
+            var message = document.createElement('li')
+            message.innerHTML = msg.message
+            document.querySelector('#chat').appendChild(message) 
+        })
+    </script>
+</body>
+</html>
